@@ -1,0 +1,4 @@
+*.gif
+temp_images
+daily_weather.json
+__pycache__
