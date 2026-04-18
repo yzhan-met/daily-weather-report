@@ -2,3 +2,7 @@
 temp_images
 daily_weather.json
 __pycache__
+.venv
+.wechat_cover_media_id
+daily_weather_example.json
+wechat_article.md

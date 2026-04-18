@@ -10,6 +10,7 @@ from _common import now_iso, write_json
 
 
 SECTION_NAMES = ("Short Forecast", "Extended Forecast")
+MAX_SECTION_SCAN_ELEMENTS = 240
 
 
 async def extract_all_content(page) -> list[str]:
@@ -88,7 +89,7 @@ async def extract_sections(url: str, export_all: bool = False) -> dict:
 
                         heading = locator.first
                         content = await heading.evaluate(
-                            """(node) => {
+                            """(node, maxScanElements) => {
                                 const clean = (text) =>
                                   (text || "").replace(/\\s+/g, " ").trim();
                                 const rank = Number((node.tagName || "H6").replace(/[^0-9]/g, "")) || 6;
@@ -113,7 +114,7 @@ async def extract_sections(url: str, export_all: bool = False) -> dict:
 
                                 let current = node;
                                 let inspected = 0;
-                                while ((current = nextElement(current)) && inspected < 120) {
+                                while ((current = nextElement(current)) && inspected < maxScanElements) {
                                   inspected += 1;
                                   const tag = (current.tagName || "").toUpperCase();
                                   if (/^H[1-6]$/.test(tag)) {
@@ -132,8 +133,9 @@ async def extract_sections(url: str, export_all: bool = False) -> dict:
                                   }
                                 }
 
-                                return out.slice(0, 12);
-                            }"""
+                                return out;
+                            }""",
+                            MAX_SECTION_SCAN_ELEMENTS,
                         )
 
                         sections[name] = {
