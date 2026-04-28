@@ -42,7 +42,8 @@ ARTICLE_PROMPT_TEMPLATE = """\
 {json_data}
 
 请根据上述数据，撰写一篇微信公众号天气报道，要求如下：
-- 文章标题（第一行，使用 Markdown # 标记）：新西兰天气预报 | {date_label}
+- 文章标题（第一行，使用 Markdown # 标记）：格式为：{date_label} | 根据天气数据总结的标题，例如：新西兰南岛持续降雨，北岛晴好
+- 在第一段直接切入主题，根据Json的天气数据，按南岛、北岛归纳总结近期天气概况。
 - 分别介绍"近期天气概况"（对应 Short Forecast）和"未来天气展望"（对应 Extended Forecast）。
 - 地名标准中文翻译+英文括注（例如：北岛（North Island）、科罗曼德尔（Coromandel）、吉斯本（Gisborne）、霍克斯湾（Hawke's Bay）、怀卡托（Waikato）等）。
 - 排版清晰，使用二级标题（##）区分各板块，适当使用 emoji。
