@@ -10,6 +10,7 @@ Usage:
 Environment variables (required):
     WECHAT_APP_ID       WeChat Official Account AppID
     WECHAT_APP_SECRET   WeChat Official Account AppSecret
+    >> 8111105cc9c1fa20ad8910729092de7c
 
 Prerequisites:
     pip install requests markdown Pillow
@@ -78,6 +79,153 @@ def upload_permanent_image(access_token: str, image_path: Path) -> str:
     media_id = data["media_id"]
     print(f"  ✓ Cover image uploaded → media_id: {media_id}")
     return media_id
+
+
+def upload_image_for_content(access_token: str, image_path: Path) -> str:
+    """Upload an image to WeChat Permanent Material and return its CDN URL.
+
+    WeChat permanent image materials return a ``url`` field that can be
+    embedded directly in article HTML content.
+    """
+    import requests
+
+    # Determine MIME type from suffix
+    suffix = image_path.suffix.lower()
+    mime = "image/gif" if suffix == ".gif" else "image/jpeg"
+
+    url = (
+        f"{WECHAT_API_BASE}/cgi-bin/material/add_material"
+        f"?access_token={access_token}&type=image"
+    )
+    with open(image_path, "rb") as f:
+        files = {"media": (image_path.name, f, mime)}
+        resp = requests.post(url, files=files, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    if "url" not in data:
+        raise RuntimeError(
+            f"Content image upload failed (no url returned): {data.get('errmsg', data)}"
+        )
+    cdn_url = data["url"]
+    print(f"  ✓ Content image uploaded → {cdn_url}")
+    return cdn_url
+
+
+def upload_image_full(access_token: str, image_path: Path) -> tuple[str, str]:
+    """Upload an image to WeChat Permanent Material.
+
+    Returns:
+        (media_id, url) — media_id for use as article cover (thumb_media_id);
+        url for embedding directly in article HTML content.
+    """
+    import requests
+
+    suffix = image_path.suffix.lower()
+    if suffix == ".gif":
+        mime = "image/gif"
+    elif suffix == ".png":
+        mime = "image/png"
+    else:
+        mime = "image/jpeg"
+
+    url = (
+        f"{WECHAT_API_BASE}/cgi-bin/material/add_material"
+        f"?access_token={access_token}&type=image"
+    )
+    with open(image_path, "rb") as f:
+        files = {"media": (image_path.name, f, mime)}
+        resp = requests.post(url, files=files, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    if "media_id" not in data or "url" not in data:
+        raise RuntimeError(
+            f"Image upload failed (missing media_id or url): {data.get('errmsg', data)}"
+        )
+    print(f"  ✓ Image uploaded → media_id: {data['media_id']}")
+    return data["media_id"], data["url"]
+
+
+def replace_local_images(
+    html: str,
+    access_token: str,
+    base_dir: Path,
+) -> tuple[str, list[str]]:
+    """Replace local <img src="..."> paths in HTML with WeChat CDN URLs.
+
+    Any ``src`` that does not start with ``http`` is treated as a path
+    relative to *base_dir*, uploaded to WeChat, and replaced with the
+    returned CDN URL.
+
+    Returns:
+        (updated_html, cdn_urls) — updated HTML and list of all CDN URLs
+        in document order (for building a gallery).
+    """
+    cdn_urls: list[str] = []
+
+    def _replace(m: re.Match) -> str:
+        before, src, after = m.group(1), m.group(2), m.group(3)
+        if src.startswith("http"):
+            cdn_urls.append(src)
+            return m.group(0)  # already absolute, leave untouched
+        image_path = (base_dir / src).resolve()
+        if not image_path.exists():
+            print(f"  ⚠ Inline image not found, skipping: {image_path}", file=__import__('sys').stderr)
+            return m.group(0)
+        cdn_url = upload_image_for_content(access_token, image_path)
+        cdn_urls.append(cdn_url)
+        return f'<img{before}src="{cdn_url}"{after}>'
+
+    updated = re.sub(r'<img([^>]*?)src="([^"]+)"([^>]*)>', _replace, html)
+    return updated, cdn_urls
+
+
+def capture_screenshot(url: str, output_path: Path) -> None:
+    """Use Playwright to take a full-page screenshot of *url* and save it to *output_path* (PNG)."""
+    import asyncio
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        raise SystemExit(
+            "Playwright is required for screenshots.\n"
+            "Install it with: pip install playwright && python -m playwright install chromium"
+        )
+
+    async def _capture() -> None:
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(headless=True)
+            try:
+                page = await browser.new_page(viewport={"width": 1280, "height": 900})
+                try:
+                    await page.goto(url, wait_until="networkidle", timeout=30000)
+                    await page.screenshot(path=str(output_path), full_page=False)
+                finally:
+                    await page.close()
+            finally:
+                await browser.close()
+
+    asyncio.run(_capture())
+    print(f"  ✓ Screenshot saved → {output_path}")
+
+
+def build_wechat_gallery(cdn_urls: list[str]) -> str:
+    """Build a WeChat-native swipeable image gallery HTML block.
+
+    WeChat's renderer recognises ``js_editor_photogallery`` and renders it
+    as a full-width carousel that users can swipe left/right.  Each <img>
+    inside the section becomes one slide.
+    """
+    if not cdn_urls:
+        return ""
+    imgs = "\n".join(
+        f'  <img src="{url}" style="width:100%;display:block;" />'
+        for url in cdn_urls
+    )
+    return (
+        '<section class="js_editor_photogallery" '  # WeChat native gallery marker
+        'style="width:100%;overflow:hidden;margin:0 0 16px;">\n'
+        + imgs
+        + "\n</section>"
+    )
 
 
 def add_draft(access_token: str, articles: list[dict]) -> str:
@@ -348,6 +496,29 @@ def _apply_inline_styles(html: str) -> str:
     return html
 
 
+def insert_image_under_current_weather_section(html: str, img_tag: str) -> tuple[str, bool]:
+    """Insert image under the '当前天气形势' section.
+
+    This is robust to placeholder text changes by targeting the section heading
+    first, then removing common placeholder paragraph variants.
+    """
+    # Remove placeholder paragraph variants if present.
+    html = re.sub(
+        r'<p[^>]*>\s*[\[\(（]?\s*在此插入天气形势图\s*[\]\)）]?\s*</p>',
+        '',
+        html,
+    )
+
+    # Insert right after heading containing "当前天气形势".
+    m = re.search(r'(<h[2-3][^>]*>[^<]*当前天气形势[^<]*</h[2-3]>)', html)
+    if m:
+        updated = html[:m.end()] + img_tag + html[m.end():]
+        return updated, True
+
+    # Fallback: append at top if heading not found.
+    return img_tag + html, False
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -395,6 +566,18 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ignore cached cover media_id and re-upload the image.",
     )
+    parser.add_argument(
+        "--screenshot-url",
+        default="https://simpleweather.online",
+        dest="screenshot_url",
+        help="URL to screenshot, used as article cover and inserted under '当前天气形势' (default: https://simpleweather.online).",
+    )
+    parser.add_argument(
+        "--no-screenshot",
+        action="store_true",
+        dest="no_screenshot",
+        help="Skip the website screenshot; fall back to GIF first-frame as cover.",
+    )
     return parser.parse_args()
 
 
@@ -430,33 +613,40 @@ def main() -> None:
             )
             sys.exit(1)
 
-    # --- 4. Cover image ---
+    # --- 4. Cover image fallback (only used when --no-screenshot) ---
     gif_default = Path("wxcharts_forecast_wechat.gif")
-    cover_path = prepare_cover_image(args.cover, gif_default)
+    cover_path = prepare_cover_image(args.cover, gif_default) if args.no_screenshot else None
 
     # --- 5. Dry-run: just print the payload ---
     if args.dry_run:
+        dry_html = re.sub(
+            r'<img([^>]*?)src="(?!http)([^"]+)"([^>]*)>',
+            lambda m: f'<img{m.group(1)}src="<would-upload:{m.group(2)}>"{m.group(3)}>',
+            html_body,
+        )
+        if not args.no_screenshot:
+            dry_tag = f'<img src="&lt;would-screenshot:{args.screenshot_url}&gt;" style="width:100%;display:block;margin:12px 0;" />'
+            dry_html, _ = insert_image_under_current_weather_section(dry_html, dry_tag)
         payload = {
             "articles": [
                 {
                     "title": title,
                     "author": args.author,
-                    "content": html_body,
+                    "content": dry_html,
                     "content_source_url": args.content_source_url,
-                    "thumb_media_id": "<would-be-uploaded>",
+                    "thumb_media_id": "<screenshot-media_id>" if not args.no_screenshot else "<cover-media_id>",
                     "show_cover_pic": 1,
                     "need_open_comment": 0,
                 }
             ]
         }
         print("\n=== DRY RUN — payload that would be sent ===")
-        # Print a truncated version so the terminal isn't flooded
         preview = dict(payload)
         preview["articles"][0]["content"] = (
-            html_body[:300] + "…[truncated]" if len(html_body) > 300 else html_body
+            dry_html[:300] + "…[truncated]" if len(dry_html) > 300 else dry_html
         )
         print(json.dumps(preview, indent=2, ensure_ascii=False))
-        print(f"\n  Cover image: {cover_path}")
+        print(f"\n  Cover: {'screenshot of ' + args.screenshot_url if not args.no_screenshot else str(cover_path)}")
         print("=== End dry run ===")
         return
 
@@ -464,14 +654,45 @@ def main() -> None:
     print("\n[1/3] Authenticating with WeChat API…")
     access_token = get_access_token(app_id, app_secret)
 
-    # --- 7. Upload cover image (with caching) ---
-    print("[2/3] Handling cover image…")
-    thumb_media_id: str | None = None
-    if not args.no_cache:
-        thumb_media_id = load_cached_media_id(cover_path)
+    # --- 7. Screenshot → cover + inline image under 当前天气形势 ---
+    screenshot_tmp: Path | None = None
+    if not args.no_screenshot:
+        print(f"[2/3] Taking screenshot of {args.screenshot_url}…")
+        try:
+            screenshot_tmp = Path(tempfile.mktemp(suffix=".png", prefix="wechat_screenshot_"))
+            capture_screenshot(args.screenshot_url, screenshot_tmp)
+            thumb_media_id, screenshot_cdn_url = upload_image_full(access_token, screenshot_tmp)
+            # Insert screenshot into the 当前天气形势 section
+            img_tag = f'<img src="{screenshot_cdn_url}" style="width:100%;display:block;margin:12px 0;" />'
+            html_body, inserted = insert_image_under_current_weather_section(html_body, img_tag)
+            if inserted:
+                print("  ✓ Screenshot inserted under '当前天气形势' and set as cover")
+            else:
+                print("  ⚠ '当前天气形势' heading not found; screenshot inserted at top and set as cover")
+        except Exception as exc:
+            print(f"  ⚠ Screenshot failed: {exc}", file=sys.stderr)
+            thumb_media_id = None
+            screenshot_cdn_url = None
+        finally:
+            if screenshot_tmp and screenshot_tmp.exists():
+                screenshot_tmp.unlink(missing_ok=True)
+    else:
+        # Fall back to GIF first-frame as cover
+        print("[2/3] Handling cover image (GIF fallback)…")
+        thumb_media_id = None
+        if not args.no_cache:
+            thumb_media_id = load_cached_media_id(cover_path)
+        if not thumb_media_id:
+            thumb_media_id = upload_permanent_image(access_token, cover_path)
+            save_cached_media_id(cover_path, thumb_media_id)
+
     if not thumb_media_id:
-        thumb_media_id = upload_permanent_image(access_token, cover_path)
-        save_cached_media_id(cover_path, thumb_media_id)
+        print("  ⚠ No cover image available; draft may be rejected by WeChat.", file=sys.stderr)
+
+    # --- 7b. Upload local images inline (e.g. GIF under 欧洲中心 section) ---
+    print("  Uploading inline images in article body…")
+    base_dir = args.input.parent.resolve()
+    html_body, _ = replace_local_images(html_body, access_token, base_dir)
 
     # --- 8. Upload draft ---
     print("[3/3] Uploading draft to WeChat…")
