@@ -1,5 +1,6 @@
 google-genai
 markdown
+markitdown
 Pillow
 playwright
 requests

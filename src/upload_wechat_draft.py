@@ -31,7 +31,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-
 # ---------------------------------------------------------------------------
 # WeChat API helpers
 # ---------------------------------------------------------------------------
@@ -51,9 +50,7 @@ def get_access_token(app_id: str, app_secret: str) -> str:
     resp.raise_for_status()
     data = resp.json()
     if "access_token" not in data:
-        raise RuntimeError(
-            f"Failed to get access_token: {data.get('errmsg', data)}"
-        )
+        raise RuntimeError(f"Failed to get access_token: {data.get('errmsg', data)}")
     token = data["access_token"]
     print(f"  ✓ Access token obtained (expires in {data.get('expires_in', '?')}s)")
     return token
@@ -73,9 +70,7 @@ def upload_permanent_image(access_token: str, image_path: Path) -> str:
     resp.raise_for_status()
     data = resp.json()
     if "media_id" not in data:
-        raise RuntimeError(
-            f"Image upload failed: {data.get('errmsg', data)}"
-        )
+        raise RuntimeError(f"Image upload failed: {data.get('errmsg', data)}")
     media_id = data["media_id"]
     print(f"  ✓ Cover image uploaded → media_id: {media_id}")
     return media_id
@@ -169,7 +164,10 @@ def replace_local_images(
             return m.group(0)  # already absolute, leave untouched
         image_path = (base_dir / src).resolve()
         if not image_path.exists():
-            print(f"  ⚠ Inline image not found, skipping: {image_path}", file=__import__('sys').stderr)
+            print(
+                f"  ⚠ Inline image not found, skipping: {image_path}",
+                file=__import__("sys").stderr,
+            )
             return m.group(0)
         cdn_url = upload_image_for_content(access_token, image_path)
         cdn_urls.append(cdn_url)
@@ -182,6 +180,7 @@ def replace_local_images(
 def capture_screenshot(url: str, output_path: Path) -> None:
     """Use Playwright to take a full-page screenshot of *url* and save it to *output_path* (PNG)."""
     import asyncio
+
     try:
         from playwright.async_api import async_playwright
     except ImportError:
@@ -217,14 +216,11 @@ def build_wechat_gallery(cdn_urls: list[str]) -> str:
     if not cdn_urls:
         return ""
     imgs = "\n".join(
-        f'  <img src="{url}" style="width:100%;display:block;" />'
-        for url in cdn_urls
+        f'  <img src="{url}" style="width:100%;display:block;" />' for url in cdn_urls
     )
     return (
         '<section class="js_editor_photogallery" '  # WeChat native gallery marker
-        'style="width:100%;overflow:hidden;margin:0 0 16px;">\n'
-        + imgs
-        + "\n</section>"
+        'style="width:100%;overflow:hidden;margin:0 0 16px;">\n' + imgs + "\n</section>"
     )
 
 
@@ -232,10 +228,7 @@ def add_draft(access_token: str, articles: list[dict]) -> str:
     """POST articles to the WeChat draft box. Returns the draft media_id."""
     import requests
 
-    url = (
-        f"{WECHAT_API_BASE}/cgi-bin/draft/add"
-        f"?access_token={access_token}"
-    )
+    url = f"{WECHAT_API_BASE}/cgi-bin/draft/add" f"?access_token={access_token}"
     payload = {"articles": articles}
     resp = requests.post(
         url,
@@ -281,9 +274,7 @@ def load_cached_media_id(image_path: Path) -> str | None:
 
 def save_cached_media_id(image_path: Path, media_id: str) -> None:
     cache = {"mtime": image_path.stat().st_mtime, "media_id": media_id}
-    MEDIA_ID_CACHE_FILE.write_text(
-        json.dumps(cache, indent=2), encoding="utf-8"
-    )
+    MEDIA_ID_CACHE_FILE.write_text(json.dumps(cache, indent=2), encoding="utf-8")
 
 
 def prepare_cover_image(cover_arg: Path | None, gif_path: Path | None) -> Path:
@@ -342,10 +333,7 @@ WECHAT_HTML_STYLE = {
     "li": "font-size:15px;line-height:1.8;margin:4px 0;color:#333;",
     "ul": "padding-left:20px;margin:8px 0;",
     "ol": "padding-left:20px;margin:8px 0;",
-    "hr": (
-        "border:none;border-top:1px solid #e0e0e0;"
-        "margin:20px 0;"
-    ),
+    "hr": ("border:none;border-top:1px solid #e0e0e0;" "margin:20px 0;"),
     "strong": "font-weight:bold;color:#1a1a1a;",
     "em": "font-style:italic;",
     "a": "color:#2c7bb6;text-decoration:none;",
@@ -363,7 +351,7 @@ def _preprocess_markdown(md_text: str) -> str:
 
     2. Remove lines that are purely a list marker with no content ('* ', '- ').
     """
-    lines = [l.rstrip('\r') for l in md_text.splitlines()]
+    lines = [l.rstrip("\r") for l in md_text.splitlines()]
     out: list[str] = []
     i = 0
     while i < len(lines):
@@ -372,7 +360,7 @@ def _preprocess_markdown(md_text: str) -> str:
         # Detect a top-level list item that has NO body text after the marker
         # (only bold label ending with ： or :), and whose next non-blank lines
         # are all indented child items.
-        top_match = re.match(r'^(\*|-|\d+\.)\s+(\*\*.+?[：:]?\*\*)\s*$', line)
+        top_match = re.match(r"^(\*|-|\d+\.)\s+(\*\*.+?[：:]?\*\*)\s*$", line)
         if top_match:
             label = top_match.group(2)  # e.g. **4月14日（周二）：**
             # Peek ahead: collect contiguous indented child lines
@@ -380,13 +368,15 @@ def _preprocess_markdown(md_text: str) -> str:
             children: list[str] = []
             while j < len(lines):
                 child = lines[j]
-                child_match = re.match(r'^(    |\t)(\*|-|\d+\.)\s+(.*)', child)
+                child_match = re.match(r"^(    |\t)(\*|-|\d+\.)\s+(.*)", child)
                 if child_match:
                     children.append(child_match.group(3))  # strip indent
                     j += 1
-                elif child.strip() == '':
+                elif child.strip() == "":
                     # allow a single blank line inside the group
-                    if j + 1 < len(lines) and re.match(r'^(    |\t)(\*|-)', lines[j + 1]):
+                    if j + 1 < len(lines) and re.match(
+                        r"^(    |\t)(\*|-)", lines[j + 1]
+                    ):
                         j += 1
                         continue
                     break
@@ -397,24 +387,24 @@ def _preprocess_markdown(md_text: str) -> str:
                 # Emit label as a bold paragraph, then children as a flat list.
                 # Two blank lines are needed so the markdown parser sees them
                 # as separate block elements (paragraph + list).
-                out.append('')
+                out.append("")
                 out.append(f'**{label.strip("*")}**')
-                out.append('')   # blank line separates <p> from <ul>
+                out.append("")  # blank line separates <p> from <ul>
                 for c in children:
-                    out.append(f'* {c}')
-                out.append('')
+                    out.append(f"* {c}")
+                out.append("")
                 i = j
                 continue
 
         # Drop lines that are a bare list marker with no content
-        if re.match(r'^(\*|-|\d+\.)\s*$', line):
+        if re.match(r"^(\*|-|\d+\.)\s*$", line):
             i += 1
             continue
 
         out.append(line)
         i += 1
 
-    return '\n'.join(out)
+    return "\n".join(out)
 
 
 def md_to_wechat_html(md_text: str) -> tuple[str, str]:
@@ -457,7 +447,7 @@ def md_to_wechat_html(md_text: str) -> tuple[str, str]:
     )
 
     # Strip any empty <li> elements that slipped through
-    raw_html = re.sub(r'<li[^>]*>\s*</li>', '', raw_html)
+    raw_html = re.sub(r"<li[^>]*>\s*</li>", "", raw_html)
 
     # Apply inline styles via simple tag replacement
     styled = _apply_inline_styles(raw_html)
@@ -481,10 +471,8 @@ def _apply_inline_styles(html: str) -> str:
     for tag, style in tag_style_map.items():
         # Replace opening tags (with no existing style)
         html = re.sub(
-            rf"<{tag}(\s[^>]*)?>" ,
-            lambda m, t=tag, s=style: (
-                f"<{t}{m.group(1) or ''} style=\"{s}\">"
-            ),
+            rf"<{tag}(\s[^>]*)?>",
+            lambda m, t=tag, s=style: (f"<{t}{m.group(1) or ''} style=\"{s}\">"),
             html,
         )
     # Handle <hr> as self-closing
@@ -496,7 +484,9 @@ def _apply_inline_styles(html: str) -> str:
     return html
 
 
-def insert_image_under_current_weather_section(html: str, img_tag: str) -> tuple[str, bool]:
+def insert_image_under_current_weather_section(
+    html: str, img_tag: str
+) -> tuple[str, bool]:
     """Insert image under the '当前天气形势' section.
 
     This is robust to placeholder text changes by targeting the section heading
@@ -504,15 +494,15 @@ def insert_image_under_current_weather_section(html: str, img_tag: str) -> tuple
     """
     # Remove placeholder paragraph variants if present.
     html = re.sub(
-        r'<p[^>]*>\s*[\[\(（]?\s*在此插入天气形势图\s*[\]\)）]?\s*</p>',
-        '',
+        r"<p[^>]*>\s*[\[\(（]?\s*在此插入天气形势图\s*[\]\)）]?\s*</p>",
+        "",
         html,
     )
 
     # Insert right after heading containing "当前天气形势".
-    m = re.search(r'(<h[2-3][^>]*>[^<]*当前天气形势[^<]*</h[2-3]>)', html)
+    m = re.search(r"(<h[2-3][^>]*>[^<]*当前天气形势[^<]*</h[2-3]>)", html)
     if m:
-        updated = html[:m.end()] + img_tag + html[m.end():]
+        updated = html[: m.end()] + img_tag + html[m.end() :]
         return updated, True
 
     # Fallback: append at top if heading not found.
@@ -522,6 +512,7 @@ def insert_image_under_current_weather_section(html: str, img_tag: str) -> tuple
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -615,7 +606,9 @@ def main() -> None:
 
     # --- 4. Cover image fallback (only used when --no-screenshot) ---
     gif_default = Path("wxcharts_forecast_wechat.gif")
-    cover_path = prepare_cover_image(args.cover, gif_default) if args.no_screenshot else None
+    cover_path = (
+        prepare_cover_image(args.cover, gif_default) if args.no_screenshot else None
+    )
 
     # --- 5. Dry-run: just print the payload ---
     if args.dry_run:
@@ -634,7 +627,11 @@ def main() -> None:
                     "author": args.author,
                     "content": dry_html,
                     "content_source_url": args.content_source_url,
-                    "thumb_media_id": "<screenshot-media_id>" if not args.no_screenshot else "<cover-media_id>",
+                    "thumb_media_id": (
+                        "<screenshot-media_id>"
+                        if not args.no_screenshot
+                        else "<cover-media_id>"
+                    ),
                     "show_cover_pic": 1,
                     "need_open_comment": 0,
                 }
@@ -646,7 +643,9 @@ def main() -> None:
             dry_html[:300] + "…[truncated]" if len(dry_html) > 300 else dry_html
         )
         print(json.dumps(preview, indent=2, ensure_ascii=False))
-        print(f"\n  Cover: {'screenshot of ' + args.screenshot_url if not args.no_screenshot else str(cover_path)}")
+        print(
+            f"\n  Cover: {'screenshot of ' + args.screenshot_url if not args.no_screenshot else str(cover_path)}"
+        )
         print("=== End dry run ===")
         return
 
@@ -659,16 +658,24 @@ def main() -> None:
     if not args.no_screenshot:
         print(f"[2/3] Taking screenshot of {args.screenshot_url}…")
         try:
-            screenshot_tmp = Path(tempfile.mktemp(suffix=".png", prefix="wechat_screenshot_"))
+            screenshot_tmp = Path(
+                tempfile.mktemp(suffix=".png", prefix="wechat_screenshot_")
+            )
             capture_screenshot(args.screenshot_url, screenshot_tmp)
-            thumb_media_id, screenshot_cdn_url = upload_image_full(access_token, screenshot_tmp)
+            thumb_media_id, screenshot_cdn_url = upload_image_full(
+                access_token, screenshot_tmp
+            )
             # Insert screenshot into the 当前天气形势 section
             img_tag = f'<img src="{screenshot_cdn_url}" style="width:100%;display:block;margin:12px 0;" />'
-            html_body, inserted = insert_image_under_current_weather_section(html_body, img_tag)
+            html_body, inserted = insert_image_under_current_weather_section(
+                html_body, img_tag
+            )
             if inserted:
                 print("  ✓ Screenshot inserted under '当前天气形势' and set as cover")
             else:
-                print("  ⚠ '当前天气形势' heading not found; screenshot inserted at top and set as cover")
+                print(
+                    "  ⚠ '当前天气形势' heading not found; screenshot inserted at top and set as cover"
+                )
         except Exception as exc:
             print(f"  ⚠ Screenshot failed: {exc}", file=sys.stderr)
             thumb_media_id = None
@@ -687,7 +694,10 @@ def main() -> None:
             save_cached_media_id(cover_path, thumb_media_id)
 
     if not thumb_media_id:
-        print("  ⚠ No cover image available; draft may be rejected by WeChat.", file=sys.stderr)
+        print(
+            "  ⚠ No cover image available; draft may be rejected by WeChat.",
+            file=sys.stderr,
+        )
 
     # --- 7b. Upload local images inline (e.g. GIF under 欧洲中心 section) ---
     print("  Uploading inline images in article body…")

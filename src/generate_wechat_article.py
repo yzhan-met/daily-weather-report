@@ -20,7 +20,6 @@ import os
 import sys
 from pathlib import Path
 
-
 # ---------------------------------------------------------------------------
 # Prompt builder
 # ---------------------------------------------------------------------------
@@ -48,7 +47,7 @@ ARTICLE_PROMPT_TEMPLATE = """\
 - 分别介绍"近期天气概况"（对应 Short Forecast）和"未来天气展望"（对应 Extended Forecast）。
 - 之后加入一个二级标题（## 欧洲中心(ECMWF)预报图），将wxcharts_forecast_wechat.gif嵌入文章中。
 - 地名标准中文翻译+英文括注（例如：北岛（North Island）、科罗曼德尔（Coromandel）、吉斯本（Gisborne）、霍克斯湾（Hawke's Bay）、怀卡托（Waikato）等）。
-- 排版清晰，使用二级标题（##）区分各板块，适当使用 emoji。
+- 排版清晰，使用二级标题（##）区分各板块，适当使用 emoji。无粗体或斜体。
 - 末尾保留上述固定声明。
 """
 
@@ -57,12 +56,14 @@ ARTICLE_PROMPT_TEMPLATE = """\
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def extract_date_label(data: dict) -> str:
     """Derive a human-readable Chinese date label from the fetched_at field."""
     fetched_at = data.get("fetched_at", "")
     if fetched_at:
         # Parse ISO datetime, e.g. "2026-04-11T17:27:42+12:00"
         from datetime import datetime
+
         try:
             dt = datetime.fromisoformat(fetched_at)
             # Format: 2026年4月11日
@@ -82,14 +83,14 @@ def build_prompt(data: dict) -> str:
 # Gemini API call
 # ---------------------------------------------------------------------------
 
+
 def call_gemini(prompt: str, model: str = "gemini-3-pro-preview") -> str:
     try:
         from google import genai
         from google.genai import types
     except ImportError:
         raise SystemExit(
-            "google-genai is required. Install it with:\n"
-            "  pip install google-genai"
+            "google-genai is required. Install it with:\n" "  pip install google-genai"
         )
 
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -117,6 +118,7 @@ def call_gemini(prompt: str, model: str = "gemini-3-pro-preview") -> str:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
