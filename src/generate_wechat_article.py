@@ -25,29 +25,29 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = """\
-你是一位专业的新西兰华人天气资讯编辑，擅长将英文气象数据整理成适合微信公众号发布的中文天气报道。
+你是一位专业的新西兰华人天气资讯编辑, 擅长将英文气象数据整理成适合微信公众号发布的中文天气报道。
 写作要求：
-1. 语言流畅自然，适合普通读者。
-2. 地名一律翻译成标准中文并在括号内保留英文原文，例如：奥克兰（Auckland）、惠灵顿（Wellington）。
-3. 排版适合微信公众号：使用清晰的标题层级、分段，适当使用 emoji 增加可读性，但不要过度。
+1. 语言流畅自然, 适合普通读者。
+2. 地名一律翻译成标准中文并在括号内保留英文原文, 例如: 奥克兰(Auckland), 惠灵顿(Wellington)。
+3. 排版适合微信公众号：使用清晰的标题层级、分段, 适当使用 emoji 增加可读性, 但不要过度。
 4. 不要捏造数据；只根据提供的 JSON 内容进行改写和归纳。
-5. 在文章最后另起一行，固定输出以下声明（内容不得改动）：
-   本文天气数据来源于新西兰气象局 MetService 官方网站；由 Kiwi天气站 自动整理发布；关于 Metservice、NIWA 等详细天气预报可参考 simpleweather.online
+5. 在文章最后另起一个段落, 固定输出以下声明( 内容不得改动): 
+   本文天气数据来源于新西兰气象局 MetService 官方网站；由 Kiwi天气站 自动整理发布；关于 Metservice、NIWA 等实时天气预报可参考 simpleweather.online
 """
 
 ARTICLE_PROMPT_TEMPLATE = """\
-以下是从 MetService 官网抓取的 JSON 天气数据，fetched_at 字段表示数据获取时间：
+以下是从 MetService 官网抓取的 JSON 天气数据, fetched_at 字段表示数据获取时间：
 
 {json_data}
 
-请根据上述数据，撰写一篇微信公众号天气报道，要求如下：
-- 文章标题（第一行，使用 Markdown # 标记）：格式为：{date_label} | 根据天气数据总结的标题，例如：新西兰南岛持续降雨，北岛晴好
-- 在第一段直接切入主题，根据Json的天气数据，按南岛、北岛归纳总结近期天气概况。
-- 第一段结束后，加入一个二级标题（## 当前天气形势）后留出一个placeholder，我会手动添加一张天气形势图。
-- 分别介绍"近期天气概况"（对应 Short Forecast）和"未来天气展望"（对应 Extended Forecast）。
-- 之后加入一个二级标题（## 欧洲中心(ECMWF)预报图），将wxcharts_forecast_wechat.gif嵌入文章中。
-- 地名标准中文翻译+英文括注（例如：北岛（North Island）、科罗曼德尔（Coromandel）、吉斯本（Gisborne）、霍克斯湾（Hawke's Bay）、怀卡托（Waikato）等）。
-- 排版清晰，使用二级标题（##）区分各板块，适当使用 emoji。无粗体或斜体。
+请根据上述数据, 撰写一篇微信公众号天气报道, 要求如下：
+- 文章标题( 第一行, 使用 Markdown # 标记) ：格式为：{date_label} | 根据天气数据总结的标题, 例如：新西兰南岛持续降雨, 北岛晴好
+- 在第一段直接切入主题, 根据Json的天气数据, 按南岛、北岛归纳总结近期天气概况。
+- 第一段结束后, 加入一个二级标题( ## 当前天气形势) 后留出一行空行, 我会手动添加一张天气形势图。
+- 分别介绍"近期天气概况"( 对应 Short Forecast) 和"未来天气展望"( 对应 Extended Forecast) 。
+- 之后加入一个二级标题( ## 欧洲中心(ECMWF)预报图) , 将wxcharts_forecast_wechat.gif嵌入文章中。
+- 地名标准中文翻译+英文括注( 例如：北岛( North Island) 、科罗曼德尔( Coromandel) 、吉斯本( Gisborne) 、霍克斯湾( Hawke's Bay) 、怀卡托( Waikato) 等) 。
+- 排版清晰, 使用二级标题( ##) 区分各板块, 适当使用 emoji。
 - 末尾保留上述固定声明。
 """
 
@@ -170,10 +170,26 @@ def main() -> None:
     prompt = build_prompt(data)
     print(f"  Calling Gemini ({args.model})…")
 
-    try:
-        article = call_gemini(prompt, model=args.model)
-    except Exception as exc:
-        print(f"✗ Gemini API error: {exc}", file=sys.stderr)
+    import time
+    max_retries = 3
+    retry_delay = 30
+    article = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            article = call_gemini(prompt, model=args.model)
+            break
+        except Exception as exc:
+            if attempt < max_retries:
+                print(f"✗ Gemini API error (attempt {attempt}): {exc}", file=sys.stderr)
+                print(f"  Retrying in {retry_delay}s…", file=sys.stderr)
+                time.sleep(retry_delay)
+            else:
+                print(f"✗ Gemini API error (attempt {attempt}): {exc}", file=sys.stderr)
+                sys.exit(1)
+
+    if article is None:
+        print("✗ Failed to generate article after all retries", file=sys.stderr)
         sys.exit(1)
 
     # Write output
