@@ -1,0 +1,120 @@
+=== 2026-06-10 09:00:00 | Starting daily weather report ===
+[1/4] Fetching homepage forecasts...
+✓ Wrote homepage sections to daily_weather.json
+      -> daily_weather.json created.
+[3/4] Generating WeChat article...
+✓ Loaded weather data from daily_weather.json
+  Calling Gemini (gemini-3-flash-preview)…
+✓ WeChat article written to wechat_article.md
+      -> wechat_article.md created.
+[4/4] Uploading draft to WeChat Official Account...
+✓ Loaded article from wechat_article.md
+  Converting Markdown → WeChat HTML…
+  Title: 2026年6月10日 | 北岛大部迎来晴好天气，南岛南部及沿海偶有阵雨
+
+[1/3] Authenticating with WeChat API…
+Traceback (most recent call last):
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/miniconda3/lib/python3.12/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/miniconda3/lib/python3.12/ssl.py", line 1042, in _create
+    self.do_handshake()
+  File "/Users/yzhan/miniconda3/lib/python3.12/ssl.py", line 1320, in do_handshake
+    self._sslobj.do_handshake()
+TimeoutError: _ssl.c:983: The handshake operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/adapters.py", line 645, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/util/retry.py", line 490, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 466, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.weixin.qq.com', port=443): Read timed out. (read timeout=15)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 728, in <module>
+    main()
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 654, in main
+    access_token = get_access_token(app_id, app_secret)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 49, in get_access_token
+    resp = requests.get(url, timeout=15)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/sessions.py", line 592, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/sessions.py", line 706, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/.venv/lib/python3.12/site-packages/requests/adapters.py", line 691, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.weixin.qq.com', port=443): Read timed out. (read timeout=15)
+      ⚠ Draft upload failed (check WECHAT_APP_ID / WECHAT_APP_SECRET and IP whitelist). Continuing.
+=== Done ===
+=== 2026-06-11 09:00:00 | Starting daily weather report ===
+[1/4] Fetching homepage forecasts...
+✓ Wrote homepage sections to daily_weather.json
+      -> daily_weather.json created.
+[3/4] Generating WeChat article...
+✓ Loaded weather data from daily_weather.json
+  Calling Gemini (gemini-3-flash-preview)…
+✓ WeChat article written to wechat_article.md
+      -> wechat_article.md created.
+[4/4] Uploading draft to WeChat Official Account...
+✓ Loaded article from wechat_article.md
+  Converting Markdown → WeChat HTML…
+  Title: 2026年6月11日 | 北岛晴冷多霜冻，南岛南部晚间将迎强降雨
+
+[1/3] Authenticating with WeChat API…
+Traceback (most recent call last):
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 728, in <module>
+    main()
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 654, in main
+    access_token = get_access_token(app_id, app_secret)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yzhan/Gits/daily-weather-report/src/upload_wechat_draft.py", line 53, in get_access_token
+    raise RuntimeError(f"Failed to get access_token: {data.get('errmsg', data)}")
+RuntimeError: Failed to get access_token: invalid appsecret rid: 6a29d0b0-5e0b696b-5eeb7fc7
+      ⚠ Draft upload failed (check WECHAT_APP_ID / WECHAT_APP_SECRET and IP whitelist). Continuing.
+=== Done ===

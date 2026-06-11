@@ -24,9 +24,11 @@ echo "      -> daily_weather.json created."
 # rm -rf temp_images
 # wxcharts run
 # echo "      -> wxcharts finished."
+# "$VENV_PY" /Users/yzhan/Gits/wxcharts-animation/create_animation.py
+# echo "      -> wxcharts finished."
 
-# # Add a pause and allow user to review wxcharts output before proceeding
-# read -p "Press Enter to continue to WeChat article generation (or Ctrl+C to abort)"
+# # # Add a pause and allow user to review wxcharts output before proceeding
+# # read -p "Press Enter to continue to WeChat article generation (or Ctrl+C to abort)"
 
 # Step 3: Generate WeChat article via Gemini API
 echo "[3/4] Generating WeChat article..."
@@ -36,12 +38,12 @@ echo "[3/4] Generating WeChat article..."
 echo "      -> wechat_article.md created."
 
 # Step 4: Upload draft to WeChat Official Account (best-effort)
-# echo "[4/4] Uploading draft to WeChat Official Account..."
-# if "$VENV_PY" src/upload_wechat_draft.py \
-#     --input wechat_article.md; then
-#     echo "      -> Draft uploaded successfully."
-# else
-#     echo "      ⚠ Draft upload failed (check WECHAT_APP_ID / WECHAT_APP_SECRET and IP whitelist). Continuing."
-# fi
+echo "[4/4] Uploading draft to WeChat Official Account..."
+if "$VENV_PY" src/upload_wechat_draft.py \
+    --input wechat_article.md; then
+    echo "      -> Draft uploaded successfully."
+else
+    echo "      ⚠ Draft upload failed (check WECHAT_APP_ID / WECHAT_APP_SECRET and IP whitelist). Continuing."
+fi
 
 echo "=== Done ==="
