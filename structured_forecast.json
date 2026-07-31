@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-07-31T12:35:52.973109",
+  "forecasts": {
+    "Auckland": [
+      {
+        "date": "1 Aug",
+        "dow": "Saturday",
+        "min": "3",
+        "max": "14",
+        "morning": "Partly cloudy",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      },
+      {
+        "date": "2 Aug",
+        "dow": "Sunday",
+        "min": "6",
+        "max": "13",
+        "morning": "Fine",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      }
+    ],
+    "Hamilton": [
+      {
+        "date": "1 Aug",
+        "dow": "Saturday",
+        "min": "-3",
+        "max": "13",
+        "morning": "Partly cloudy",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      },
+      {
+        "date": "2 Aug",
+        "dow": "Sunday",
+        "min": "0",
+        "max": "13",
+        "morning": "Fine",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      }
+    ],
+    "Wellington": [
+      {
+        "date": "1 Aug",
+        "dow": "Saturday",
+        "min": "5",
+        "max": "9",
+        "morning": "Few showers",
+        "afternoon": "Few showers",
+        "evening": "Few showers"
+      },
+      {
+        "date": "2 Aug",
+        "dow": "Sunday",
+        "min": "8",
+        "max": "12",
+        "morning": "Fine",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      }
+    ],
+    "Christchurch": [
+      {
+        "date": "1 Aug",
+        "dow": "Saturday",
+        "min": "-2",
+        "max": "9",
+        "morning": "Showers",
+        "afternoon": "Few showers",
+        "evening": "Fine"
+      },
+      {
+        "date": "2 Aug",
+        "dow": "Sunday",
+        "min": "2",
+        "max": "14",
+        "morning": "Fine",
+        "afternoon": "Fine",
+        "evening": "Fine"
+      }
+    ]
+  }
+}
