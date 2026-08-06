@@ -63,6 +63,8 @@ _WEATHER_EMOJI: dict[str, str] = {
     "mainly fine": "🌤️",
     "partly cloudy": "⛅",
     "cloudy": "☁️",
+    "frost": "🥶",
+    "wind rain": "🌬️🌧️",
     "overcast": "☁️",
     "few showers": "🌦️",
     "drizzle": "🌦️",
@@ -95,6 +97,12 @@ _CITY_ZH: dict[str, str] = {
     "Invercargill": "因弗卡吉尔",
     "Whangarei": "旺阿雷",
     "Gisborne": "吉斯本",
+    "Northland": "北地",
+    "Waikato": "怀卡托",
+    "Bay of Plenty": "丰盛湾",
+    "Hawke's Bay": "霍克斯湾",
+    "Taranaki": "塔拉纳基",
+    "Manawatu-Wanganui": "马纳瓦图-旺格努伊",
 }
 
 

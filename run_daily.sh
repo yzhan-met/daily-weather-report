@@ -15,9 +15,9 @@ fi
 echo "=== $(date '+%Y-%m-%d %H:%M:%S') | Starting daily weather report ==="
 
 # Step 1: Fetch homepage forecasts
-# echo "[1/4] Fetching homepage forecasts..."
-# "$VENV_PY" src/fetch_homepage_forecasts.py --output daily_weather.json
-# echo "      -> daily_weather.json created."
+echo "[1/4] Fetching homepage forecasts..."
+"$VENV_PY" src/fetch_homepage_forecasts.py --output daily_weather.json
+echo "      -> daily_weather.json created."
 
 # # Step 2: Clean up temp images and run wxcharts
 # echo "[2/4] Removing temp_images and running wxcharts..."
@@ -31,16 +31,16 @@ echo "=== $(date '+%Y-%m-%d %H:%M:%S') | Starting daily weather report ==="
 # # read -p "Press Enter to continue to WeChat article generation (or Ctrl+C to abort)"
 
 # Step 2: Extract next 2 days' structured city forecast for LLM processing
-# echo "[2/4] Extracting structured forecast for next 2 days..."
-# "$VENV_PY" src/local_forecast.py --city Auckland Hamilton Wellington Christchurch --output structured_forecast.json
-# echo "      -> structured_forecast.json created."
+echo "[2/4] Extracting structured forecast for next 2 days..."
+"$VENV_PY" src/local_forecast.py --city Auckland Hamilton Wellington Christchurch --output structured_forecast.json
+echo "      -> structured_forecast.json created."
 
 # Step 3: Generate WeChat article via Gemini API
-# echo "[3/4] Generating WeChat article..."
-# "$VENV_PY" src/generate_wechat_article.py \
-#     --input daily_weather.json \
-#     --output wechat_article.md
-# echo "      -> wechat_article.md created."
+echo "[3/4] Generating WeChat article..."
+"$VENV_PY" src/generate_wechat_article.py \
+    --input daily_weather.json \
+    --output wechat_article.md
+echo "      -> wechat_article.md created."
 
 # Step 4: Upload draft to WeChat Official Account (best-effort)
 echo "[4/4] Uploading draft to WeChat Official Account..."

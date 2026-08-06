@@ -5,4 +5,5 @@ __pycache__
 .venv
 .wechat_cover_media_id
 daily_weather_example.json
+structured_forecast.json
 wechat_article.md
